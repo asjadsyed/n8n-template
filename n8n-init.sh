@@ -57,6 +57,16 @@ SURVEY_RESPONSE=$(
     --data-raw "$SURVEY_PAYLOAD"
 )
 
+OLLAMA_ACCOUNT_CREDENTIALS_PAYLOAD='{"name":"Ollama account","type":"ollamaApi","data":{"baseUrl":"http://ollama:11434"}}'
+OLLAMA_ACCOUNT_CREDENTIALS_RESPONSE=$(
+    curl -fsS "http://n8n:5678/rest/credentials" \
+    -c "$COOKIE_JAR" \
+    -b "$COOKIE_JAR" \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    --data-raw "$OLLAMA_ACCOUNT_CREDENTIALS_PAYLOAD"
+)
+
 n8n import:workflow --input /opt/n8n/workflows/ --separate
 
 # CREATE_API_KEY_REQUEST='{"label":"Init","expiresAt":null,"scopes":["credential:create","credential:delete","credential:move","project:create","project:delete","project:list","project:update","securityAudit:generate","sourceControl:pull","tag:create","tag:delete","tag:list","tag:read","tag:update","user:changeRole","user:create","user:delete","user:enforceMfa","user:list","user:read","variable:create","variable:delete","variable:list","variable:update","workflow:create","workflow:delete","workflow:list","workflow:move","workflow:read","workflow:update","workflowTags:update","workflowTags:list","workflow:activate","workflow:deactivate","execution:delete","execution:read","execution:retry","execution:list"]}'

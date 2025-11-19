@@ -11,41 +11,47 @@ until N8N_SETTINGS_RESPONSE=$(
     sleep 5
 done
 
-N8N_OWNER_SETUP_PAYLOAD=$(
-    jq -n \
-    --arg N8N_FIRST_NAME "$N8N_FIRST_NAME" \
-    --arg N8N_LAST_NAME "$N8N_LAST_NAME" \
-    --arg N8N_EMAIL "$N8N_EMAIL" \
-    --arg N8N_PASSWORD "$N8N_PASSWORD" \
-    '{
-        "email":$N8N_EMAIL,"firstName":$N8N_FIRST_NAME,"lastName":$N8N_LAST_NAME,"password":$N8N_PASSWORD,"agree":true
-    }'
-)
-N8N_OWNER_SETUP_RESPONSE=$(
-    curl -fsS "http://n8n:5678/rest/owner/setup" \
-    -c "$COOKIE_JAR" \
-    -b "$COOKIE_JAR" \
-    -X POST \
-    -H "Content-Type: application/json" \
-    --data-raw "$N8N_OWNER_SETUP_PAYLOAD"
-)
+owner_setup() {
+    N8N_OWNER_SETUP_PAYLOAD=$(
+        jq -n \
+        --arg N8N_FIRST_NAME "$N8N_FIRST_NAME" \
+        --arg N8N_LAST_NAME "$N8N_LAST_NAME" \
+        --arg N8N_EMAIL "$N8N_EMAIL" \
+        --arg N8N_PASSWORD "$N8N_PASSWORD" \
+        '{
+            "email":$N8N_EMAIL,"firstName":$N8N_FIRST_NAME,"lastName":$N8N_LAST_NAME,"password":$N8N_PASSWORD,"agree":true
+        }'
+    )
+    N8N_OWNER_SETUP_RESPONSE=$(
+        curl -fsS "http://n8n:5678/rest/owner/setup" \
+        -c "$COOKIE_JAR" \
+        -b "$COOKIE_JAR" \
+        -X POST \
+        -H "Content-Type: application/json" \
+        --data-raw "$N8N_OWNER_SETUP_PAYLOAD"
+    )
+}
 
-LOGIN_PAYLOAD=$(
-    jq -n \
-    --arg N8N_EMAIL "$N8N_EMAIL" \
-    --arg N8N_PASSWORD "$N8N_PASSWORD" \
-    '{
-        "emailOrLdapLoginId":$N8N_EMAIL,"password":$N8N_PASSWORD
-    }'
-)
-LOGIN_RESPONSE=$(
-    curl -fsS "http://n8n:5678/rest/login" \
-    -c "$COOKIE_JAR" \
-    -b "$COOKIE_JAR" \
-    -X POST \
-    -H "Content-Type: application/json" \
-    --data-raw "$LOGIN_PAYLOAD"
-)
+login() {
+    LOGIN_PAYLOAD=$(
+        jq -n \
+        --arg N8N_EMAIL "$N8N_EMAIL" \
+        --arg N8N_PASSWORD "$N8N_PASSWORD" \
+        '{
+            "emailOrLdapLoginId":$N8N_EMAIL,"password":$N8N_PASSWORD
+        }'
+    )
+    LOGIN_RESPONSE=$(
+        curl -fsS "http://n8n:5678/rest/login" \
+        -c "$COOKIE_JAR" \
+        -b "$COOKIE_JAR" \
+        -X POST \
+        -H "Content-Type: application/json" \
+        --data-raw "$LOGIN_PAYLOAD"
+    )
+}
+
+login || owner_setup
 
 SURVEY_PAYLOAD='{"version":"v4","personalization_survey_submitted_at":"","personalization_survey_n8n_version":""}'
 SURVEY_RESPONSE=$(

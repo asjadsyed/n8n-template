@@ -63,15 +63,34 @@ SURVEY_RESPONSE=$(
     --data-raw "$SURVEY_PAYLOAD"
 )
 
-OLLAMA_ACCOUNT_CREDENTIALS_PAYLOAD='{"name":"Ollama account","type":"ollamaApi","data":{"baseUrl":"http://ollama:11434"}}'
-OLLAMA_ACCOUNT_CREDENTIALS_RESPONSE=$(
-    curl -fsS "http://n8n:5678/rest/credentials" \
-    -c "$COOKIE_JAR" \
-    -b "$COOKIE_JAR" \
-    -X POST \
-    -H 'Content-Type: application/json' \
-    --data-raw "$OLLAMA_ACCOUNT_CREDENTIALS_PAYLOAD"
-)
+ensure_ollama_account_credentials() {
+    EXISTING_ACCOUNT_CREDENTIALS_RESPONSE=$(
+        curl -fsS "http://n8n:5678/rest/credentials" \
+            -c "$COOKIE_JAR" \
+            -b "$COOKIE_JAR"
+    )
+
+    OLLAMA_ACCOUNT_CREDENTIALS_ID=$(
+        echo "$EXISTING_ACCOUNT_CREDENTIALS_RESPONSE" \
+            | jq -r '.data[]?
+                | select(.type == "ollamaApi" and .name == "Ollama account")
+                | .id' \
+            | head -n 1
+    )
+
+    if [ -z "$OLLAMA_ACCOUNT_CREDENTIALS_ID" ] || [ "$OLLAMA_ACCOUNT_CREDENTIALS_ID" = "null" ]; then
+        OLLAMA_ACCOUNT_CREDENTIALS_PAYLOAD='{"name":"Ollama account","type":"ollamaApi","data":{"baseUrl":"http://ollama:11434"}}'
+        OLLAMA_ACCOUNT_CREDENTIALS_RESPONSE=$(
+            curl -fsS "http://n8n:5678/rest/credentials" \
+            -c "$COOKIE_JAR" \
+            -b "$COOKIE_JAR" \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data-raw "$OLLAMA_ACCOUNT_CREDENTIALS_PAYLOAD"
+        )
+    fi
+}
+ensure_ollama_account_credentials
 
 n8n import:workflow --input /opt/n8n/workflows/ --separate
 

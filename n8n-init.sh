@@ -90,7 +90,55 @@ ensure_ollama_account_credentials() {
         )
     fi
 }
+
+ensure_gemini_api_credentials() {
+    if [ -z "${GEMINI_API_KEY:-}" ]; then
+        echo "GEMINI_API_KEY is not set; skipping Google Gemini(PaLM) Api credential creation" >&2
+        return 0
+    fi
+
+    EXISTING_ACCOUNT_CREDENTIALS_RESPONSE=$(
+        curl -fsS "http://n8n:5678/rest/credentials" \
+            -c "$COOKIE_JAR" \
+            -b "$COOKIE_JAR"
+    )
+
+    GEMINI_API_CREDENTIALS_ID=$(
+        echo "$EXISTING_ACCOUNT_CREDENTIALS_RESPONSE" \
+            | jq -r '.data[]?
+                | select(.type == "googlePalmApi" and .name == "Google Gemini(PaLM) Api account")
+                | .id' \
+            | head -n 1
+    )
+
+    if [ -z "$GEMINI_API_CREDENTIALS_ID" ] || [ "$GEMINI_API_CREDENTIALS_ID" = "null" ]; then
+        GEMINI_API_CREDENTIALS_PAYLOAD=$(
+            jq -n \
+              --arg apiKey "$GEMINI_API_KEY" \
+              --arg host "https://generativelanguage.googleapis.com" \
+              '{
+                  "name": "Google Gemini(PaLM) Api account",
+                  "type": "googlePalmApi",
+                  "data": {
+                      "apiKey": $apiKey,
+                      "host": $host
+                  }
+              }'
+        )
+
+        GEMINI_API_CREDENTIALS_RESPONSE=$(
+            curl -fsS "http://n8n:5678/rest/credentials" \
+              -c "$COOKIE_JAR" \
+              -b "$COOKIE_JAR" \
+              -X POST \
+              -H 'Content-Type: application/json' \
+              --data-raw "$GEMINI_API_CREDENTIALS_PAYLOAD"
+        )
+    fi
+}
+
 ensure_ollama_account_credentials
+ensure_gemini_api_credentials
 
 n8n import:workflow --input /opt/n8n/workflows/ --separate
 
